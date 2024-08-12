@@ -1,11 +1,9 @@
 fileFormatVersion: 2
-guid: 7e60605db1a7d6e4fa6237e2102464db
+guid: 31b63d22613dbe744aab5d2e0568e694
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences:
-  - textMeshPro: {instanceID: 0}
-  - cursorObject: {instanceID: 0}
+  defaultReferences: []
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

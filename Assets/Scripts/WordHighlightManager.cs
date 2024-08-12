@@ -1,16 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using TMPro;
 
-public class TextSelectionWithOffsetCursor : MonoBehaviour
+public class SimpleHighlightManager : MonoBehaviour
 {
     public TextMeshProUGUI textMeshPro;
     public GameObject cursorObject;  // Reference to the GameObject with a SpriteRenderer for the cursor
-    public float cursorOffset = 1f;  // Vertical offset for the cursor (in screen units)
 
     private int startIndex;
     private int endIndex;
     private bool isSelecting;
-
+    private string filename;
     private string originalText;
 
     void Start()
@@ -18,8 +20,12 @@ public class TextSelectionWithOffsetCursor : MonoBehaviour
         // Store the original text without any markup
         originalText = textMeshPro.text;
 
-        // Hide the cursor initially
-        cursorObject.SetActive(false);
+        // Generate a unique filename using the current timestamp
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        filename = Application.dataPath + $"/highlighted_text_{timestamp}.csv";
+
+        // Initialize the CSV header
+        File.WriteAllText(filename, "HighlightedText\n");
     }
 
     void Update()
@@ -27,7 +33,7 @@ public class TextSelectionWithOffsetCursor : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             Vector2 startPos = Input.mousePosition;
-            Vector2 offsetStartPos = startPos + new Vector2(0, cursorOffset); // Apply the offset in screen space
+            Vector2 offsetStartPos = startPos;  // Apply offset if needed
 
             // Use the offset cursor position for selecting text
             startIndex = TMP_TextUtilities.GetCursorIndexFromPosition(textMeshPro, offsetStartPos, null);
@@ -42,7 +48,7 @@ public class TextSelectionWithOffsetCursor : MonoBehaviour
         if (isSelecting && Input.GetMouseButton(0))
         {
             Vector2 currentPos = Input.mousePosition;
-            Vector2 offsetCurrentPos = currentPos + new Vector2(0, cursorOffset); // Apply the offset in screen space
+            Vector2 offsetCurrentPos = currentPos;  // Apply offset if needed
 
             // Update the cursor position visually with offset
             Vector3 worldCursorPos = Camera.main.ScreenToWorldPoint(new Vector3(offsetCurrentPos.x, offsetCurrentPos.y, Camera.main.nearClipPlane));
@@ -58,8 +64,6 @@ public class TextSelectionWithOffsetCursor : MonoBehaviour
         if (Input.GetMouseButtonUp(0))
         {
             isSelecting = false;
-
-            // Hide the cursor when selection ends
             cursorObject.SetActive(false);
         }
     }
@@ -74,18 +78,23 @@ public class TextSelectionWithOffsetCursor : MonoBehaviour
             end = temp;
         }
 
-        // Restore original text before applying new markup
-        textMeshPro.text = originalText;
+        // Extract the highlighted text from the original text
+        string highlightedText = originalText.Substring(start, end - start);
+        string cleanHighlightedText = highlightedText.Trim();
 
-        // Extract the parts of the text before, within, and after the selection
-        string before = textMeshPro.text.Substring(0, start);
-        string selected = textMeshPro.text.Substring(start, end - start);
-        string after = textMeshPro.text.Substring(end);
+        // Debug log for extracted text
+        Debug.Log($"Highlighted Text: {highlightedText}");
 
-        // Apply markup to the selected text
-        selected = $"<u><color=#808080AA>{selected}</color></u>";
+        // Write highlighted text to CSV
+        WriteToCSV(highlightedText);
+    }
 
-        // Combine the text parts back together
-        textMeshPro.text = before + selected + after;
+    void WriteToCSV(string highlightedText)
+    {
+        // Append the highlighted text to the CSV file
+        using (TextWriter tw = new StreamWriter(filename, true))
+        {
+            tw.WriteLine(highlightedText);
+        }
     }
 }
